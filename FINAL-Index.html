@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Living Water Church</title>
+<style>
+body{margin:0;font-family:system-ui;background:linear-gradient(135deg,#0e4f8c,#42a5f5);min-height:100vh;display:flex;align-items:center;justify-content:center}
+.card{background:white;width:95%;max-width:420px;border-radius:28px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.logo{width:72px;height:72px;background:linear-gradient(135deg,#0e4f8c,#42a5f5);border-radius:18px;display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:28px;margin:0 auto 14px}
+h1{text-align:center;margin:0;font-size:28px;letter-spacing:-1px}h1 span{color:#1976d2}
+.sub{color:#64748b;text-align:center;font-size:14px;margin:6px 0 18px;font-weight:600}
+.tabs{display:flex;background:#f1f5f9;border-radius:999px;padding:4px;margin-bottom:18px}
+.tabs button{flex:1;padding:10px;border-radius:999px;border:0;font-weight:800;font-size:14px;cursor:pointer}
+.tabs .on{background:#0f172a;color:white}
+input{width:100%;padding:14px 16px;border-radius:14px;border:1px solid #e2e8f0;background:#f8fafc;margin-top:6px;box-sizing:border-box;font-size:15px}
+label{font-size:11px;font-weight:800;letter-spacing:.08em;color:#334155;text-transform:uppercase}
+.btn{width:100%;padding:14px;border-radius:14px;border:0;font-weight:800;font-size:15px;cursor:pointer;margin-top:10px}
+.btn-dark{background:#0f172a;color:white}
+.btn-blue{background:linear-gradient(135deg,#0e4f8c,#42a5f5);color:white}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.msg{font-size:13px;text-align:center;margin-top:12px;font-weight:700}
+.hidden{display:none}
+.welcome{background:white;max-width:520px;width:95%;border-radius:28px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.welcome .top{background:linear-gradient(135deg,#0e4f8c,#42a5f5);padding:28px;color:white}
+</style></head><body>
+
+<div id="auth" class="card">
+<div class="logo">LW</div>
+<h1>LIVING <span>Water</span></h1>
+<p class="sub">CHURCH</p>
+<div class="tabs"><button id="t1" class="on" onclick="tab('login')">Log In</button><button id="t2" onclick="tab('signup')">Sign Up</button></div>
+
+<div id="login">
+<label>Email</label><input id="le" type="email" placeholder="you@example.com">
+<label style="margin-top:10px;display:block">Password</label><input id="lp" type="password" placeholder="••••••••">
+<button class="btn btn-dark" onclick="login()">Log In</button>
+</div>
+
+<div id="signup" class="hidden">
+<div class="grid2"><div><label>First Name</label><input id="fn" placeholder="John"></div><div><label>Last Name</label><input id="ln" placeholder="Smith"></div></div>
+<label style="margin-top:10px;display:block">Email</label><input id="se" type="email" placeholder="you@example.com">
+<label style="margin-top:10px;display:block">Password</label><input id="sp" type="password" placeholder="Create password">
+<button class="btn btn-blue" onclick="signup()">Create Account</button>
+</div>
+
+<p id="m" class="msg"></p>
+</div>
+
+<div id="main" class="welcome hidden">
+<div class="top"><h2 style="margin:0">Welcome, <span id="wn">Family</span>!</h2><p id="we" style="opacity:.9;margin:8px 0 0"></p><button onclick="logout()" style="margin-top:14px;background:rgba(255,255,255,.2);color:white;border:0;padding:8px 14px;border-radius:999px;font-weight:700">Log out</button></div>
+<div style="padding:20px"><p style="margin:0;font-weight:800">Sunday Service — 10:00 AM</p><p style="color:#64748b;font-size:14px">Worship & Word • 123 Faith Lane</p>
+<div style="margin-top:16px;background:#eff6ff;padding:16px;border-radius:16px"><b style="color:#0e4f8c">You are logged in</b><p id="full" style="margin:6px 0 0"></p></div></div>
+</div>
+
+<script>
+const U='lwc_users',S='lwc_sess';
+function getU(){try{return JSON.parse(localStorage.getItem(U)||'[]')}catch(e){return []}}
+function saveU(u){localStorage.setItem(U,JSON.stringify(u))}
+function tab(t){
+document.getElementById('login').classList.toggle('hidden',t!=='login');
+document.getElementById('signup').classList.toggle('hidden',t!=='signup');
+document.getElementById('t1').className=t==='login'?'on':'';
+document.getElementById('t2').className=t==='signup'?'on':'';
+document.getElementById('m').innerText='';
+}
+function signup(){
+let fn=document.getElementById('fn').value.trim(),ln=document.getElementById('ln').value.trim(),e=document.getElementById('se').value.trim().toLowerCase(),p=document.getElementById('sp').value;
+let m=document.getElementById('m');
+if(!fn||!ln||!e||!p){m.style.color='red';m.innerText='Fill all fields';return}
+let users=getU();if(users.find(x=>x.email===e)){m.style.color='red';m.innerText='Email already exists — log in';return}
+users.push({firstName:fn,lastName:ln,email:e,password:p});saveU(users);
+localStorage.setItem(S,JSON.stringify({firstName:fn,lastName:ln,email:e}));showMain();
+}
+function login(){
+let e=document.getElementById('le').value.trim().toLowerCase(),p=document.getElementById('lp').value,m=document.getElementById('m');
+let u=getU().find(x=>x.email===e&&x.password===p);if(!u){m.style.color='red';m.innerText='Wrong email or password';return}
+localStorage.setItem(S,JSON.stringify(u));showMain();
+}
+function showMain(){
+let s=null;try{s=JSON.parse(localStorage.getItem(S))}catch(e){}if(!s)return;
+document.getElementById('auth').classList.add('hidden');let main=document.getElementById('main');main.classList.remove('hidden');
+document.getElementById('wn').innerText=s.firstName;document.getElementById('we').innerText=s.email;document.getElementById('full').innerText=s.firstName+' '+s.lastName+' — '+s.email;
+}
+function logout(){localStorage.removeItem(S);document.getElementById('main').classList.add('hidden');document.getElementById('auth').classList.remove('hidden');}
+(function(){let s=null;try{s=JSON.parse(localStorage.getItem(S))}catch(e){}if(s)showMain()})();
+</script>
+</body></html>
