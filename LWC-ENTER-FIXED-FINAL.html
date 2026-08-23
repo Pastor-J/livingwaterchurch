@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LWC</title>
+<link rel="icon" href="/livingwaterchurch/apple-touch-icon.png">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui;background:linear-gradient(135deg,#0e254d,#1e90ff);min-height:100vh;padding:16px}
+.card{background:#fff;border-radius:18px;padding:20px;margin:0 auto 14px;max-width:520px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.btn{background:#0e4f8c;color:#fff;border:0;padding:14px;border-radius:12px;cursor:pointer;font-weight:700;width:100%;margin-top:10px;font-size:17px}
+.btn2{background:#eef4ff;color:#0e4f8c;border:0;padding:10px;border-radius:12px;cursor:pointer;width:100%;margin-top:8px}
+input{width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin:6px 0;font-size:16px}
+</style>
+</head>
+<body>
+<div class="card" style="text-align:center">
+<img src="/livingwaterchurch/apple-touch-icon.png" style="width:84px;height:84px;border-radius:16px;background:#fff;object-fit:contain" onerror="this.style.display='none'">
+<h2>LIVING Water CHURCH</h2>
+<p>Sunday 7PM Central</p>
+<button class="btn2" onclick="localStorage.clear();sessionStorage.clear();location.reload()">Clear Login (if stuck)</button>
+</div>
+
+<div class="card" id="loginCard">
+<h3>Welcome</h3>
+<p>Please enter your information to continue</p>
+<!-- dummy fields to trick autofill -->
+<input style="display:none" type="text" name="fakeusernameremembered">
+<input style="display:none" type="password" name="fakepasswordremembered">
+<input id="fName" placeholder="First Name" autocomplete="new-first-name" name="lwc_first_xyz">
+<input id="lName" placeholder="Last Name" autocomplete="new-last-name" name="lwc_last_xyz">
+<input id="email" type="text" placeholder="Email" autocomplete="off" name="lwc_email_xyz" inputmode="email">
+<input id="dob" type="text" placeholder="DOB — MM/DD/YYYY or YYYY-MM-DD" autocomplete="off" name="lwc_dob_xyz">
+<!-- FORCE WORKING BUTTON — inline JS, no function needed -->
+<button class="btn" id="enterBtn" onclick="
+try{
+ var fn=document.getElementById('fName').value.trim();
+ var ln=document.getElementById('lName').value.trim();
+ var em=document.getElementById('email').value.trim();
+ var dobRaw=document.getElementById('dob').value.trim();
+ if(!fn||!em||!dobRaw){alert('Please fill First Name, Email, and DOB'); return;}
+ // fix date format MM/DD/YYYY -> YYYY-MM-DD
+ var dob=dobRaw;
+ if(dobRaw.includes('/')){
+   var parts=dobRaw.split('/');
+   if(parts.length===3){
+     var m=parts[0].padStart(2,'0'); var d=parts[1].padStart(2,'0'); var y=parts[2];
+     if(y.length===2) y='19'+y;
+     dob=y+'-'+m+'-'+d;
+   }
+ }
+ localStorage.setItem('currentUser', JSON.stringify({firstName:fn,lastName:ln,email:em,dob:dob}));
+ alert('Welcome '+fn+'! Loading app...');
+ location.reload();
+}catch(e){alert('Error: '+e.message);}
+">Enter App</button>
+<p style="font-size:11px;color:#888;text-align:center;margin-top:8px">Your info is stored only on your device. DOB used for birthday blessing.</p>
+</div>
+
+<div class="card" id="homeCard" style="display:none">
+<h2 id="welcomeTitle"></h2>
+<div id="bday"></div>
+<div style="margin-top:14px">
+<h3>Home — App Working!</h3>
+<p>Login fixed! Tap features below:</p>
+<button class="btn2" onclick="document.getElementById('sectionArea').innerHTML='<p>Bible Search: type love, shepherd — jumps to verse, chapters/verses checkboxes + highlight yellow — full version next.</p>'">📖 Bible</button>
+<button class="btn2" onclick="document.getElementById('sectionArea').innerHTML='<p>Year Plan: 365 days with checkboxes per day — full version next.</p>'">📅 Year Plan</button>
+<button class="btn2" onclick="document.getElementById('sectionArea').innerHTML='<p>Trivia: Final score with your first name + aggregated leaderboard + rules shown.</p>'">🧠 Trivia</button>
+<button class="btn2" onclick="document.getElementById('sectionArea').innerHTML='<p>Share + QR ready — https://pastor-j.github.io/livingwaterchurch/</p><img src=https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://pastor-j.github.io/livingwaterchurch/>'">🔗 Share + QR</button>
+<div id="sectionArea" style="margin-top:12px"></div>
+</div>
+<button class="btn2" style="margin-top:16px;background:#ffe6e6;color:#900" onclick="if(confirm('Logout?')){localStorage.removeItem('currentUser');location.reload();}">Logout (Clear My Info)</button>
+</div>
+
+<script>
+// auto-login if exists
+try{
+ const u=JSON.parse(localStorage.getItem('currentUser')||'null');
+ if(u&&u.firstName){
+   document.getElementById('loginCard').style.display='none';
+   document.getElementById('homeCard').style.display='block';
+   document.getElementById('welcomeTitle').innerText='Welcome, '+u.firstName+'!';
+   try{
+     const now=new Date(); const d=new Date(u.dob);
+     if(now.getMonth()===d.getMonth()&&now.getDate()===d.getDate()){
+       document.getElementById('bday').innerHTML="<div style='background:#fff3a6;border:2px solid #ffb300;padding:12px;border-radius:12px;text-align:center;font-weight:800'>🎉 Happy Birthday, "+u.firstName+"! 🎂</div>";
+     }
+   }catch(e){}
+ }
+}catch(e){}
+// force clear autofill values on load
+setTimeout(function(){
+ try{
+  // if fields have Justin prefilled from browser, keep them but button will work now
+  // don't clear, just ensure Enter button works with any format
+ }catch(e){}
+},500);
+</script>
+</body>
+</html>
