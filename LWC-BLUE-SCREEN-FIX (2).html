@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LWC</title>
+<link rel="apple-touch-icon" href="/livingwaterchurch/apple-touch-icon.png">
+<link rel="icon" href="/livingwaterchurch/android-chrome-192x192.png">
+<link rel="manifest" href="/livingwaterchurch/site.webmanifest">
+<meta name="theme-color" content="#0e4f8c">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui;background:linear-gradient(135deg,#0e254d,#1e90ff);min-height:100vh;display:flex}
+#sidebar{width:250px;background:#0a1930;color:#fff;display:flex;flex-direction:column;padding:14px 10px;position:fixed;top:0;left:0;bottom:0;z-index:20;overflow:auto}
+#sidebar h2{display:flex;align-items:center;gap:8px;font-size:18px;margin:6px 0 16px}
+#sidebar button{background:transparent;border:0;color:#a9c8ff;text-align:left;padding:11px 12px;border-radius:12px;cursor:pointer;font-size:15px;width:100%;margin:2px 0}
+#sidebar button.active,#sidebar button:hover{background:rgba(255,255,255,.15);color:#fff}
+#main{margin-left:250px;flex:1;padding:18px;min-width:0}
+.card{background:#fff;border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 8px 28px rgba(0,0,0,.15)}
+.bday{background:#fff3a6;border:2px solid #ffb300;padding:12px;border-radius:14px;text-align:center;font-weight:800;margin-bottom:12px}
+#hamb{display:none;position:fixed;top:12px;left:12px;z-index:30;background:#0a1930;color:#fff;border:0;padding:10px 14px;border-radius:12px}
+.verse{display:flex;gap:8px;padding:8px;border-bottom:1px solid #eee}
+.verse.hl{background:#fff59d}
+@media(max-width:860px){#sidebar{transform:translateX(-100%);transition:.28s}#sidebar.open{transform:translateX(0)}#main{margin-left:0;padding-top:56px}#hamb{display:block}}
+input,textarea{width:100%;padding:11px;border-radius:12px;border:1px solid #ccc;margin:6px 0}
+.btn{background:#0e4f8c;color:#fff;border:0;padding:11px 16px;border-radius:12px;cursor:pointer;font-weight:700}
+.btn2{background:#eef4ff;color:#0e4f8c;border:0;padding:9px 13px;border-radius:12px;cursor:pointer}
+</style>
+</head>
+<body>
+<button id="hamb" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+<div id="sidebar">
+<h2><img src="/livingwaterchurch/apple-touch-icon.png" style="width:42px;height:42px;background:#fff;border-radius:10px;object-fit:contain" onerror="this.src='/livingwaterchurch/android-chrome-192x192.png'"> LWC</h2>
+<button id="btn-home" class="active" onclick="go('home')">🏠 Home</button>
+<button id="btn-bible" onclick="go('bible')">📖 Bible</button>
+<button id="btn-plan" onclick="go('plan')">📅 Year Plan</button>
+<button id="btn-trivia" onclick="go('trivia')">🧠 Trivia</button>
+<button id="btn-praise" onclick="go('praise')">🙌 Praise</button>
+<button id="btn-prayer" onclick="go('prayer')">🙏 Prayer</button>
+<button id="btn-suggest" onclick="go('suggest')">💡 Suggestions</button>
+<button id="btn-share" onclick="go('share')">🔗 Share / QR</button>
+<div style="margin-top:auto"><button onclick="clearAndReload()">🔄 Reset App</button><br><button onclick="logout()">🚪 Logout</button></div>
+</div>
+<div id="main"><div id="bday"></div><div id="content"><div class="card">Loading app... if stuck >3 sec tap Reset App on left.</div></div></div>
+<div id="pwdModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99;place-items:center"><div class="card" style="width:92%;max-width:360px"><h3>Pastor Only</h3><input type="password" id="pwdInput" placeholder="PastorJ2026"><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" onclick="unlock()">Unlock</button><button class="btn2" onclick="document.getElementById('pwdModal').style.display='none'">Cancel</button></div><p id="pwdMsg" style="color:red"></p></div></div>
+<script>
+function get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}}
+function set(k,v){localStorage.setItem(k,JSON.stringify(v));}
+let currentUser=get('currentUser');
+let readVerses=get('readVerses')||{};
+let highlights=get('highlights')||{};
+let planProgress=get('planProgress')||{};
+let sermon=get('weeklySermon');
+let prayers=get('prayers')||[];
+let praises=get('praise')||[];
+let suggestions=get('suggestions')||[];
+let leaderboard=get('leaderboard')||{};
+let prayedMap=get('prayed')||{};
+const books={"Genesis":50,"Exodus":40,"Leviticus":27,"Numbers":36,"Deuteronomy":34,"Joshua":24,"Judges":21,"Ruth":4,"1 Samuel":31,"2 Samuel":24,"1 Kings":22,"2 Kings":25,"1 Chronicles":29,"2 Chronicles":36,"Ezra":10,"Nehemiah":13,"Esther":10,"Job":42,"Psalm":150,"Proverbs":31,"Ecclesiastes":12,"Song of Songs":8,"Isaiah":66,"Jeremiah":52,"Lamentations":5,"Ezekiel":48,"Daniel":12,"Hosea":14,"Joel":3,"Amos":9,"Obadiah":1,"Jonah":4,"Micah":7,"Nahum":3,"Habakkuk":3,"Zephaniah":3,"Haggai":2,"Zechariah":14,"Malachi":4,"Matthew":28,"Mark":16,"Luke":24,"John":21,"Acts":28,"Romans":16,"1 Corinthians":16,"2 Corinthians":13,"Galatians":6,"Ephesians":6,"Philippians":4,"Colossians":4,"1 Thessalonians":5,"2 Thessalonians":3,"1 Timothy":6,"2 Timothy":4,"Titus":3,"Philemon":1,"Hebrews":13,"James":5,"1 Peter":5,"2 Peter":3,"1 John":5,"2 John":1,"3 John":1,"Jude":1,"Revelation":22};
+const bibleDB={"John 3:16":"For God so loved the world, that He gave His only begotten Son, that whoever believes in Him shall not perish, but have eternal life.","Genesis 1:1":"In the beginning God created the heavens and the earth.","Psalm 23:1":"The LORD is my shepherd, I shall not want.","Jeremiah 29:11":"For I know the plans that I have for you, declares the LORD.","Philippians 4:13":"I can do all things through Him who strengthens me.","Romans 8:28":"God causes all things to work together for good.","Proverbs 3:5":"Trust in the LORD with all your heart.","Isaiah 41:10":"Do not fear, for I am with you."};
+
+function clearAndReload(){if(confirm("Reset app data? This will log you out and clear stuck data.")){localStorage.clear();sessionStorage.clear();location.reload();}}
+
+function checkBday(){if(!currentUser||!currentUser.dob)return;try{const now=new Date();const dob=new Date(currentUser.dob);if(now.getMonth()===dob.getMonth()&&now.getDate()===dob.getDate()){document.getElementById('bday').innerHTML="<div class='bday'>🎉 Happy Birthday, "+(currentUser.firstName||'Friend')+"! From Living Water Church! 🎂</div>";}}catch(e){}}
+
+function go(tab){
+ document.querySelectorAll('#sidebar button').forEach(b=>b.classList.remove('active'));
+ const btn=document.getElementById('btn-'+tab);if(btn)btn.classList.add('active');
+ document.getElementById('sidebar').classList.remove('open');
+ if(tab==='home')renderHome();
+ if(tab==='bible')renderBible();
+ if(tab==='plan')renderPlan();
+ if(tab==='trivia')renderTrivia();
+ if(tab==='praise')renderPraise();
+ if(tab==='prayer')renderPrayer();
+ if(tab==='suggest')renderSuggest();
+ if(tab==='share')renderShare();
+}
+
+function renderHome(){
+ let html='';
+ if(sermon&&sermon.title){
+   html+="<div class='card'><h3>This Week's Sermon</h3>";
+   if(sermon.image)html+="<img src='"+sermon.image+"' style='width:100%;border-radius:14px;max-height:260px;object-fit:cover;margin-bottom:8px'>";
+   html+="<h4>"+(sermon.title||'')+"</h4><p><b>"+(sermon.scripture||'')+"</b></p><p>"+(sermon.desc||'')+"</p><button class='btn2' onclick='askPwd()'>Pastor Login to Update</button></div>";
+ }else{
+   html+="<div class='card'><h3>This Week's Sermon</h3><p>No sermon yet. Pastor can upload.</p><button class='btn' onclick='askPwd()'>Pastor Login to Update</button></div>";
+ }
+ html+="<div class='card'><h3>Sunday Service — 7:00 PM Central</h3><p>Welcome Home to Living Water Church!</p><button class='btn' onclick='go("bible")'>Open Bible</button> <button class='btn2' onclick='go("share")'>Share + QR</button></div>";
+ html+="<div id='sermonEditor' style='display:none' class='card'><h3>Upload Sermon</h3><input id='sTitle' placeholder='Title'><input id='sScript' placeholder='Scripture'><textarea id='sDesc' placeholder='What is sermon about?'></textarea><input type='file' id='sImg' accept='image/*'><div style='display:flex;gap:8px;margin-top:8px'><button class='btn' onclick='saveSermon(event)'>Save</button><button class='btn2' onclick='document.getElementById("sermonEditor").style.display="none"'>Cancel</button></div></div>";
+ document.getElementById('content').innerHTML=html;
+}
+function askPwd(){if(sessionStorage.getItem('sermonUnlock')==='1'){document.getElementById('sermonEditor').style.display='block';return;}document.getElementById('pwdModal').style.display='grid';}
+function unlock(){if(document.getElementById('pwdInput').value==='PastorJ2026'){sessionStorage.setItem('sermonUnlock','1');document.getElementById('pwdModal').style.display='none';document.getElementById('sermonEditor').style.display='block';}else{document.getElementById('pwdMsg').innerText='Wrong password';}}
+async function saveSermon(e){e.preventDefault();let title=document.getElementById('sTitle').value,scr=document.getElementById('sScript').value,desc=document.getElementById('sDesc').value;let img=sermon&&sermon.image?sermon.image:'';const f=document.getElementById('sImg').files[0];if(f){if(f.size>2500000){alert('Image too big, saving text only');}else{const r=new FileReader();img=await new Promise(res=>{r.onload=function(){res(r.result);};r.readAsDataURL(f);});}}sermon={title:title,scripture:scr,desc:desc,image:img,date:new Date().toISOString()};set('weeklySermon',sermon);alert('Sermon Updated!');renderHome();}
+
+function renderBible(){
+ let html="<div class='card'><h3>🔍 Search Bible</h3><p>Search keywords or part of verse — jumps straight to it.</p><div style='display:flex;gap:8px'><input id='searchIn' placeholder='e.g. love, shepherd, eternal life'><button class='btn' onclick='doSearch()'>Search</button></div><div id='searchRes' style='margin-top:10px'></div></div>";
+ html+="<div class='card'><h3>📖 Bible — 66 Books (LSB inside reader)</h3><div style='display:flex;flex-wrap:wrap;gap:6px'>";
+ Object.keys(books).forEach(function(b){html+="<button class='btn2' onclick='openBook(""+b+"")'>"+b+"</button>";});
+ html+="</div></div><div id='bibleDetail'></div>";
+ document.getElementById('content').innerHTML=html;
+ document.getElementById('searchIn').addEventListener('keydown',function(e){if(e.key==='Enter')doSearch();});
+}
+function doSearch(){
+ const q=(document.getElementById('searchIn').value||'').toLowerCase().trim();if(!q)return;
+ let results=[];
+ Object.entries(bibleDB).forEach(function(entry){const ref=entry[0],text=entry[1];if(text.toLowerCase().includes(q)||ref.toLowerCase().includes(q))results.push({ref:ref,text:text});});
+ let html="<b>"+results.length+" results for '"+q+"'</b>";
+ results.slice(0,20).forEach(function(r){html+="<div class='verse' style='cursor:pointer;background:#f9f9ff' onclick='jumpTo(""+r.ref+"")'><b>"+r.ref+"</b> — "+r.text.slice(0,120)+"</div>";});
+ if(results.length===0)html+="<p>No results. Try 'love', 'shepherd', 'God'.</p>";
+ document.getElementById('searchRes').innerHTML=html;
+}
+function jumpTo(ref){
+ if(ref.indexOf(':')>-1){
+  const parts=ref.split(' ');
+  const book=parts.slice(0,-1).join(' ');
+  const chvs=parts[parts.length-1].split(':');
+  const ch=parseInt(chvs[0]);
+  openBook(book);
+  setTimeout(function(){openChapter(book,ch,parseInt(chvs[1]));},200);
+ }else{openBook(ref);}
+}
+function openBook(b){
+ let ch=books[b];
+ let h="<div class='card'><h3>"+b+" — "+ch+" Chapters</h3><div style='display:flex;flex-wrap:wrap;gap:6px'>";
+ for(let i=1;i<=ch;i++){h+="<button class='btn2' onclick='openChapter(""+b+"","+i+")'>"+i+"</button>";}
+ h+="</div></div>";
+ document.getElementById('bibleDetail').innerHTML=h;
+}
+function openChapter(b,c,hl){
+ let h="<div class='card'><h3>"+b+" "+c+" <span style='background:#eef4ff;padding:3px 8px;border-radius:8px;font-size:12px'>LSB</span></h3>";
+ for(let v=1;v<=30;v++){
+  const key=b+"-"+c+"-"+v;
+  const checked=readVerses[key]?'checked':'';
+  const hlClass=highlights[key]?'hl':'';
+  const border=hl===v?'2px solid #0e4f8c':'';
+  const ref=b+" "+c+":"+v;
+  const txt=bibleDB[ref]||"Verse "+v+" of "+b+" "+c+" — LSB placeholder. Check when read, highlight.";
+  h+="<div class='verse "+hlClass+"' id='v-"+key+"' style='border:"+border+"'><input type='checkbox' "+checked+" onchange='toggleRead(""+key+"")'><div><b>"+v+"</b> "+txt+"</div><button class='btn2' style='margin-left:auto' onclick='toggleHL(""+key+"")'>🖍️</button></div>";
+ }
+ h+="</div>";
+ document.getElementById('bibleDetail').innerHTML=h;
+ if(hl){setTimeout(function(){const el=document.getElementById('v-'+b+'-'+c+'-'+hl);if(el)el.scrollIntoView({behavior:'smooth'});},300);}
+}
+function toggleRead(k){readVerses[k]=!readVerses[k];if(!readVerses[k])delete readVerses[k];set('readVerses',readVerses);}
+function toggleHL(k){highlights[k]=!highlights[k];if(!highlights[k])delete highlights[k];set('highlights',highlights);const el=document.getElementById('v-'+k);if(el)el.classList.toggle('hl');}
+
+function renderPlan(){
+ let html="<div class='card'><h3>📅 Bible in a Year — Daily Plan</h3><p>Books, chapters, verses + checkbox.</p></div>";
+ for(let i=1;i<=90;i++){
+  const checked=planProgress[i]?'checked':'';
+  const reading=i%3===0?"Genesis "+(Math.floor(i/2)+1)+", Matthew "+(i%28+1):"Psalm "+(i%150+1)+", Mark "+(i%16+1);
+  html+="<div class='card' style='display:flex;gap:10px;align-items:center'><input type='checkbox' style='width:22px;height:22px' "+checked+" onchange='togglePlan("+i+")'><div><b>Day "+i+"</b><br><small>"+reading+"</small></div></div>";
+ }
+ html+="<p>Showing 90 of 365.</p>";
+ document.getElementById('content').innerHTML=html;
+}
+function togglePlan(d){planProgress[d]=!planProgress[d];if(!planProgress[d])delete planProgress[d];set('planProgress',planProgress);}
+
+const triviaQ=[{q:"How many days did God create?",a:["6","7","40","3"],c:0},{q:"Where was Jesus born?",a:["Bethlehem","Nazareth","Jerusalem","Galilee"],c:0},{q:"Who built ark?",a:["Noah","Moses","David","Abraham"],c:0},{q:"First book?",a:["Genesis","Matthew","John","Psalm"],c:0},{q:"Psalm 23 Lord is my...",a:["Shepherd","King","Father","Judge"],c:0}];
+let triviaIdx=0,triviaScore=0;
+function renderTrivia(){
+ let rules="<div class='card'><h3>🧠 Trivia — Rules</h3><ul><li>10 pts per correct +2 bonus perfect</li><li>Score shows at end, not restart</li><li>Auto adds to leaderboard per day, sums together</li></ul></div>";
+ if(triviaIdx>=triviaQ.length){
+  const pct=Math.round(triviaScore/triviaQ.length*100);
+  const fn=currentUser?currentUser.firstName:'Friend';
+  let msg=pct===100?"Amazing "+fn+"! You're on fire! 🔥":pct>=80?"Great job "+fn+"! 🌱":pct>=50?"Good effort "+fn+"! 📖":"Keep going "+fn+", God honors effort! 🙏";
+  const today=new Date().toISOString().slice(0,10);
+  const email=currentUser?currentUser.email:'guest';
+  const key=email+'_'+today;
+  const prev=leaderboard[key]?leaderboard[key].score:0;
+  const plays=leaderboard[key]?leaderboard[key].plays:0;
+  leaderboard[key]={email:email,firstName:fn,date:today,score:prev+triviaScore*10+(pct===100?2:0),plays:plays+1};
+  set('leaderboard',leaderboard);
+  document.getElementById('content').innerHTML=rules+"<div class='card' style='text-align:center'><h2>Final Score</h2><h1 style='font-size:48px'>"+triviaScore+" / "+triviaQ.length+"</h1><p>"+pct+"% — "+(triviaScore*10)+" pts</p><p style='font-size:20px;font-weight:800'>"+msg+"</p><button class='btn' onclick='triviaIdx=0;triviaScore=0;renderTrivia()'>Play Again</button> <button class='btn2' onclick='renderLeader()'>Leaderboard</button></div>";
+  return;
+ }
+ const q=triviaQ[triviaIdx];
+ let html=rules+"<div class='card'><h3>Question "+(triviaIdx+1)+" / "+triviaQ.length+"</h3><p style='font-size:18px;font-weight:700'>"+q.q+"</p>";
+ q.a.forEach(function(opt,i){html+="<button class='btn2' style='display:block;width:100%;text-align:left;margin:8px 0;background:#fff;color:#000;border:1px solid #ccc;padding:12px' onclick='answer("+i+")'>"+opt+"</button>";});
+ html+="</div>";
+ document.getElementById('content').innerHTML=html;
+}
+function answer(i){if(i===triviaQ[triviaIdx].c)triviaScore++;triviaIdx++;renderTrivia();}
+function renderLeader(){
+ let arr=Object.values(leaderboard).sort(function(a,b){return b.score-a.score;});
+ let html="<div class='card'><h3>🏆 Weekly Leaderboard (aggregated per day)</h3>";
+ if(arr.length===0)html+="<p>No scores yet.</p>";
+ arr.forEach(function(r){html+="<div style='display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee'><span>"+r.firstName+" — "+r.date+" ("+r.plays+" plays)</span><b>"+r.score+" pts</b></div>";});
+ html+="<button class='btn2' onclick='renderTrivia()'>Back</button></div>";
+ document.getElementById('content').innerHTML=html;
+}
+
+function renderPraise(){
+ let html="<div class='card'><h3>🙌 Praise Wall</h3><input id='prIn' placeholder='Share praise'><button class='btn' onclick='const v=document.getElementById("prIn").value;if(!v)return;praises.push({name:currentUser?currentUser.firstName:"Anon",text:v});set("praise",praises);renderPraise();'>Post</button></div>";
+ praises.slice().reverse().forEach(function(p){html+="<div class='card'><b>"+p.name+"</b><p>"+p.text+"</p></div>";});
+ document.getElementById('content').innerHTML=html;
+}
+function renderPrayer(){
+ let html="<div class='card'><h3>🙏 Prayer Wall</h3><input id='pyIn' placeholder='Prayer request'><button class='btn' onclick='const v=document.getElementById("pyIn").value;if(!v)return;prayers.push({name:currentUser?currentUser.firstName:"Anon",text:v,count:0});set("prayers",prayers);renderPrayer();'>Post</button></div>";
+ prayers.slice().reverse().forEach(function(p,i){
+  const real=prayers.length-1-i;
+  const isP=prayedMap[real];
+  const label=isP?'✓ Prayed':'🙏 Pray';
+  html+="<div class='card'><b>"+p.name+"</b><p>"+p.text+"</p><div style='display:flex;gap:8px'><small>🙏 "+(p.count||0)+" Prayed</small><button class='btn2' onclick='doPray("+real+")'>"+label+"</button></div></div>";
+ });
+ document.getElementById('content').innerHTML=html;
+}
+function doPray(idx){if(prayedMap[idx])return;prayedMap[idx]=true;set('prayed',prayedMap);prayers[idx].count=(prayers[idx].count||0)+1;set('prayers',prayers);renderPrayer();}
+
+function renderSuggest(){
+ let html="<div class='card'><h3>💡 Suggestion Box</h3><textarea id='suIn' placeholder='Suggestion'></textarea><button class='btn' onclick='const v=document.getElementById("suIn").value;if(!v)return;suggestions.push({name:currentUser?currentUser.firstName:"Anon",text:v});set("suggestions",suggestions);renderSuggest();'>Submit</button></div>";
+ suggestions.slice().reverse().forEach(function(s){html+="<div class='card'><p>"+s.text+"</p><small>"+s.name+"</small></div>";});
+ document.getElementById('content').innerHTML=html;
+}
+function renderShare(){
+ const url='https://pastor-j.github.io/livingwaterchurch/';
+ let html="<div class='card'><h3>🔗 Share LWC</h3><button class='btn' onclick='if(navigator.share)navigator.share({title:"LWC",url:""+url+""});else{prompt("Copy link", ""+url+"")}'>Share Button</button><div style='text-align:center;margin:16px 0'><img src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https%3A%2F%2Fpastor-j.github.io%2Flivingwaterchurch%2F' style='border-radius:12px'><p>"+url+"</p></div></div>";
+ document.getElementById('content').innerHTML=html;
+}
+function renderAuth(){
+ document.getElementById('content').innerHTML="<div class='card'><h2>Welcome to LWC</h2><p>Sunday 7PM Central</p><input id='fName' placeholder='First Name'><input id='lName' placeholder='Last Name'><input id='email' type='email' placeholder='Email'><input id='pwd' type='password' placeholder='Password'><label>DOB<input id='dob' type='date' required></label><button class='btn' onclick='signup()'>Create Account</button><hr><button class='btn2' onclick='bioLogin()'>Face ID / Fingerprint</button><p style='margin-top:10px'><button class='btn2' onclick='clearAndReload()'>If stuck, Reset App</button></p></div>";
+}
+async function signup(){
+ const fn=document.getElementById('fName').value,ln=document.getElementById('lName').value,email=document.getElementById('email').value,pwd=document.getElementById('pwd').value,dob=document.getElementById('dob').value;
+ if(!fn||!email||!pwd||!dob){alert('Fill all');return;}
+ currentUser={firstName:fn,lastName:ln,email:email,dob:dob};set('currentUser',currentUser);
+ try{if(window.PublicKeyCredential){const cred=await navigator.credentials.create({publicKey:{challenge:new Uint8Array([1,2,3,4]),rp:{name:'LWC'},user:{id:new TextEncoder().encode(email),name:email,displayName:fn},pubKeyCredParams:[{type:'public-key',alg:-7}]}}).catch(function(){});if(cred)localStorage.setItem('webauthnId',btoa(String.fromCharCode.apply(null,new Uint8Array(cred.rawId))));}}catch(e){}
+ checkBday();renderHome();
+}
+async function bioLogin(){
+ try{const id=localStorage.getItem('webauthnId');if(!id){alert('No biometric saved, create account first');return;}const cred=await navigator.credentials.get({publicKey:{challenge:new Uint8Array([1,2,3,4]),allowCredentials:[{id:Uint8Array.from(atob(id),function(c){return c.charCodeAt(0);}),type:'public-key'}]}});if(cred){checkBday();renderHome();}}catch(e){alert('Biometric failed, using Stay Logged In');renderHome();}
+}
+function logout(){localStorage.removeItem('currentUser');currentUser=null;renderAuth();}
+
+// INIT IMMEDIATELY — NOT ON LOAD EVENT
+try{
+ checkBday();
+ if(!currentUser){renderAuth();}else{renderHome();}
+}catch(e){
+ document.getElementById('content').innerHTML="<div class='card'><h3>App Error</h3><p>"+e.message+"</p><button class='btn' onclick='clearAndReload()'>Reset App to Fix</button></div>";
+}
+</script>
+</body>
+</html>
