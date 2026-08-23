@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LWC</title>
+<link rel="icon" href="/livingwaterchurch/apple-touch-icon.png">
+<style>body{margin:0;font-family:system-ui;background:#0e254d;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.card{background:#fff;color:#111;border-radius:18px;padding:22px;max-width:420px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.btn{background:#0e4f8c;color:#fff;border:0;padding:12px 16px;border-radius:12px;width:100%;font-weight:700;cursor:pointer;margin-top:10px}
+.btn2{background:#eef4ff;color:#0e4f8c;border:0;padding:10px;border-radius:12px;width:100%;margin-top:8px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="card" id="app">
+<h2 style="text-align:center">LIVING Water CHURCH</h2>
+<p style="text-align:center">Sunday 7PM Central</p>
+<div id="msg" style="background:#fff3a6;padding:10px;border-radius:10px;display:none"></div>
+<input id="fName" placeholder="First Name" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin-top:8px">
+<input id="lName" placeholder="Last Name" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin-top:8px">
+<input id="email" type="email" placeholder="Email" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin-top:8px">
+<input id="dob" type="date" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin-top:8px">
+<p style="font-size:12px;color:#666">DOB for birthday blessing</p>
+<button class="btn" onclick="createAccount()">Create Account & Enter App</button>
+<button class="btn2" onclick="forceReset()">🔄 Reset App (Fixes Loading Bug)</button>
+<button class="btn2" onclick="enterAsGuest()">Continue as Guest (skip login)</button>
+<p style="font-size:12px;text-align:center;margin-top:12px">If stuck on Loading, tap Reset App, then reload ?v=final</p>
+</div>
+<script>
+function forceReset(){
+ try{localStorage.clear();sessionStorage.clear();}catch(e){}
+ document.getElementById('msg').style.display='block';
+ document.getElementById('msg').innerText='Cleared! Now go to ?v=final and reload.';
+ alert('Cleared! Now close this tab and open https://pastor-j.github.io/livingwaterchurch/?v=final');
+ location.href='https://pastor-j.github.io/livingwaterchurch/?v=final';
+}
+function createAccount(){
+ const fn=document.getElementById('fName').value, ln=document.getElementById('lName').value, email=document.getElementById('email').value, dob=document.getElementById('dob').value;
+ if(!fn||!email||!dob){alert('Need First Name, Email, DOB');return;}
+ try{localStorage.setItem('currentUser', JSON.stringify({firstName:fn,lastName:ln,email:email,dob:dob}));}catch(e){alert('Storage full, tap Reset first');return;}
+ location.href='https://pastor-j.github.io/livingwaterchurch/?v=final';
+}
+function enterAsGuest(){
+ try{localStorage.setItem('currentUser', JSON.stringify({firstName:'Friend',email:'guest@lwc',dob:'2000-01-01'}));}catch(e){}
+ location.href='https://pastor-j.github.io/livingwaterchurch/?v=final';
+}
+// If already logged in, go to main app (the full file will be ?v=final, this is emergency page)
+try{
+ const u=JSON.parse(localStorage.getItem('currentUser')||'null');
+ if(u&&u.firstName){
+   document.getElementById('msg').style.display='block';
+   document.getElementById('msg').innerText='Found login for '+u.firstName+', tap below to enter or Reset if stuck.';
+ }
+}catch(e){}
+</script>
+</body>
+</html>
