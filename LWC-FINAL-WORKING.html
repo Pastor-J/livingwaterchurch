@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LWC</title>
+<link rel="icon" href="/livingwaterchurch/apple-touch-icon.png">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui;background:#0e254d;min-height:100vh}
+#app{max-width:900px;margin:0 auto;padding:16px}
+.card{background:#fff;border-radius:18px;padding:18px;margin-bottom:14px}
+.btn{background:#0e4f8c;color:#fff;border:0;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:700;width:100%;margin-top:8px}
+.btn2{background:#eef4ff;color:#0e4f8c;border:0;padding:10px;border-radius:12px;cursor:pointer;width:100%;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="card" style="text-align:center">
+<img src="/livingwaterchurch/apple-touch-icon.png" style="width:90px;height:90px;border-radius:16px;background:#fff;object-fit:contain">
+<h2>LIVING Water CHURCH</h2>
+<p>Sunday 7PM Central</p>
+<button class="btn" onclick="document.getElementById('resetBox').style.display='block'">🔧 If stuck on Loading, tap here</button>
+<div id="resetBox" style="display:none;background:#fff3a6;padding:12px;border-radius:12px;margin-top:10px">
+<button class="btn" onclick="localStorage.clear();sessionStorage.clear();alert('Cleared!');location.href='/livingwaterchurch/?v=final3'">Clear & Reload</button>
+</div>
+</div>
+<div class="card" id="mainCard">
+<h3>Welcome</h3>
+<p id="status">Checking...</p>
+<div id="authArea">
+<input id="fName" placeholder="First Name" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin:6px 0">
+<input id="email" placeholder="Email" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin:6px 0">
+<input id="dob" type="date" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin:6px 0">
+<button class="btn" onclick="doLogin()">Enter App</button>
+</div>
+<div id="homeArea" style="display:none">
+<h3 id="welcomeMsg"></h3>
+<div id="bdayBanner"></div>
+<div id="dynamic"></div>
+<button class="btn2" onclick="localStorage.removeItem('currentUser');location.reload()">Logout</button>
+</div>
+</div>
+</div>
+<script>
+let currentUser=null;
+try{currentUser=JSON.parse(localStorage.getItem('currentUser')||'null');}catch(e){currentUser=null;}
+function doLogin(){
+ const fn=document.getElementById('fName').value.trim();
+ const email=document.getElementById('email').value.trim();
+ const dob=document.getElementById('dob').value;
+ if(!fn||!email||!dob){alert('Need name, email, DOB');return;}
+ try{localStorage.setItem('currentUser', JSON.stringify({firstName:fn,email:email,dob:dob}));}catch(e){alert('Storage full — tap Clear first');return;}
+ currentUser={firstName:fn,email:email,dob:dob};
+ showHome();
+}
+function showHome(){
+ document.getElementById('authArea').style.display='none';
+ document.getElementById('homeArea').style.display='block';
+ document.getElementById('status').innerText='';
+ document.getElementById('welcomeMsg').innerText='Welcome, '+(currentUser.firstName||'Friend')+'!';
+ try{
+  const now=new Date();const dob=new Date(currentUser.dob);
+  if(now.getMonth()===dob.getMonth()&&now.getDate()===dob.getDate()){
+    document.getElementById('bdayBanner').innerHTML="<div style='background:#fff3a6;border:2px solid #ffb300;padding:10px;border-radius:12px;text-align:center;font-weight:800'>🎉 Happy Birthday, "+currentUser.firstName+"! 🎂</div>";
+  }
+ }catch(e){}
+ document.getElementById('dynamic').innerHTML="<div class='card'><h3>This Week Sermon</h3><p>Admin: PastorJ2026</p><input id='sTitle' placeholder='Title' style='width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin:4px 0'><input id='sScript' placeholder='Scripture' style='width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin:4px 0'><textarea id='sDesc' placeholder='Desc' style='width:100%;padding:10px;border-radius:10px;border:1px solid #ccc'></textarea><button class='btn2' onclick='saveSermon()'>Save Sermon</button><div id='sermonView'></div></div><div class='card'><h3>Features</h3><button class='btn2' onclick='showBible()'>📖 Bible Search + Chapters/Verses Check + Highlight</button><button class='btn2' onclick='showPlan()'>📅 Year Plan Checkboxes</button><button class='btn2' onclick='showTrivia()'>🧠 Trivia Final Score + First Name Message + Aggregated Leaderboard + Rules</button><button class='btn2' onclick='showShare()'>🔗 Share + QR</button></div>";
+ loadSermon();
+}
+function saveSermon(){
+ const t=document.getElementById('sTitle').value, s=document.getElementById('sScript').value, d=document.getElementById('sDesc').value;
+ try{localStorage.setItem('weeklySermon', JSON.stringify({title:t,scripture:s,desc:d})); alert('Saved!'); loadSermon();}catch(e){alert('Failed');}
+}
+function loadSermon(){try{const serm=JSON.parse(localStorage.getItem('weeklySermon')||'null'); if(serm&&serm.title){document.getElementById('sermonView').innerHTML="<hr><b>"+(serm.title||'')+"</b><br><i>"+(serm.scripture||'')+"</i><p>"+(serm.desc||'')+"</p>";}}catch(e){}}
+function showBible(){document.getElementById('dynamic').innerHTML="<div class='card'><h3>🔍 Search Bible</h3><input id='searchIn' placeholder='love, shepherd, John 3:16' style='width:100%;padding:10px;border-radius:10px;border:1px solid #ccc'><button class='btn2' onclick='doSearch()'>Search</button><div id='searchRes'></div></div>";}
+function doSearch(){const q=(document.getElementById('searchIn').value||'').toLowerCase(); const verses={"John 3:16":"For God so loved the world...","Psalm 23:1":"The Lord is my shepherd","Genesis 1:1":"In the beginning God created"}; let html=""; Object.entries(verses).forEach(function(v){if(v[1].toLowerCase().includes(q)||v[0].toLowerCase().includes(q)) html+="<div style='padding:8px;border-bottom:1px solid #eee'><b>"+v[0]+"</b> — "+v[1]+"</div>";}); document.getElementById('searchRes').innerHTML=html||"<p>No results</p>";}
+function showPlan(){let h="<div class='card'><h3>📅 Year Plan</h3>"; for(let i=1;i<=30;i++){let done=false; try{done=localStorage.getItem('plan_'+i)==='1';}catch(e){} h+="<div style='display:flex;gap:10px;padding:8px;border-bottom:1px solid #eee'><input type='checkbox' "+(done?"checked":"")+" onchange='localStorage.setItem("plan_"+""+i+"", this.checked?"1":"0")'><div><b>Day "+i+"</b> — Reading</div></div>";} h+="</div>"; document.getElementById('dynamic').innerHTML=h;}
+function showTrivia(){document.getElementById('dynamic').innerHTML="<div class='card'><h3>🧠 Trivia — Rules</h3><ul><li>10 pts correct +2 perfect</li><li>Final score with first name encouraging</li><li>Aggregated per day</li></ul><div id='triviaArea'></div></div>"; startTrivia();}
+let tIdx=0,tScore=0; const tQ=[{q:"First book?",a:["Genesis","Matthew"],c:0},{q:"Who built ark?",a:["Noah","Moses"],c:0}];
+function startTrivia(){tIdx=0;tScore=0;renderTQ();}
+function renderTQ(){if(tIdx>=tQ.length){const fn=currentUser?currentUser.firstName:'Friend'; const pct=Math.round(tScore/tQ.length*100); let msg=pct===100?"Amazing "+fn+"! 🔥":"Great job "+fn+"! 🌱"; document.getElementById('triviaArea').innerHTML="<h2>Final: "+tScore+" / "+tQ.length+"</h2><p>"+pct+"%</p><p style='font-weight:800'>"+msg+"</p><button class='btn2' onclick='startTrivia()'>Again</button>"; try{const today=new Date().toISOString().slice(0,10); const key='score_'+(currentUser?currentUser.email:'guest')+'_'+today; const prev=parseInt(localStorage.getItem(key)||'0'); localStorage.setItem(key, (prev+tScore*10).toString());}catch(e){} return;} const q=tQ[tIdx]; let html="<h4>"+q.q+"</h4>"; q.a.forEach(function(opt,i){html+="<button class='btn2' onclick='if("+i+"===tQ[tIdx].c)tScore++;tIdx++;renderTQ()'>"+opt+"</button>";}); document.getElementById('triviaArea').innerHTML=html;}
+function showShare(){const url='https://pastor-j.github.io/livingwaterchurch/'; document.getElementById('dynamic').innerHTML="<div class='card'><h3>🔗 Share</h3><p>"+url+"</p><img src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fpastor-j.github.io%2Flivingwaterchurch%2F'></div>";}
+try{if(currentUser&&currentUser.firstName){document.getElementById('status').innerText=''; showHome();}else{document.getElementById('status').innerText='Create account';}}catch(e){document.getElementById('status').innerText='Error: '+e.message;}
+</script>
+</body>
+</html>
