@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LWC</title>
+<link rel="icon" href="/livingwaterchurch/apple-touch-icon.png">
+<style>*{box-sizing:border-box}body{margin:0;font-family:system-ui;background:#0e254d;min-height:100vh;padding:16px}
+.card{background:#fff;border-radius:18px;padding:18px;margin-bottom:14px;max-width:500px;margin:0 auto 14px}
+.btn{background:#0e4f8c;color:#fff;border:0;padding:14px;border-radius:12px;cursor:pointer;font-weight:700;width:100%;margin-top:8px;font-size:16px}
+.btn2{background:#eef4ff;color:#0e4f8c;border:0;padding:10px;border-radius:12px;cursor:pointer;width:100%;margin-top:8px}
+input{width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin:6px 0;font-size:16px}
+</style>
+</head>
+<body>
+<div class="card" style="text-align:center">
+<img src="/livingwaterchurch/apple-touch-icon.png" style="width:80px;height:80px;border-radius:16px;background:#fff" onerror="this.style.display='none'">
+<h2>LIVING Water CHURCH</h2>
+<p>Sunday 7PM Central</p>
+<button class="btn2" onclick="localStorage.clear();sessionStorage.clear();location.href='/livingwaterchurch/?v=fix2'">🔧 Stuck? Tap to Clear & Reload</button>
+</div>
+<div class="card">
+<h3 id="title">Welcome</h3>
+<p id="msg">Tap Enter App below</p>
+<input id="fName" placeholder="First Name" value="Justin">
+<input id="email" placeholder="Email" value="raymer8810@icloud.com">
+<input id="dob" type="date" value="1988-07-29">
+<button class="btn" onclick="forceEnter()">Enter App (FORCE)</button>
+<button class="btn2" onclick="guestEnter()">Continue as Guest</button>
+<div id="home" style="display:none;margin-top:16px;border-top:2px solid #eee;padding-top:12px">
+<h3 id="welcome"></h3>
+<div id="bday"></div>
+<button class="btn2" onclick="document.getElementById('features').style.display='block'">Show App Features</button>
+<div id="features" style="display:none;margin-top:12px">
+<button class="btn2" onclick="alert('Bible Search: type love, shepherd, John 3:16')">📖 Bible Search</button>
+<button class="btn2" onclick="alert('Year Plan: 365 days checkboxes — full version in next upload')">📅 Year Plan</button>
+<button class="btn2" onclick="alert('Trivia: Final score + your first name encouraging + aggregated leaderboard')">🧠 Trivia</button>
+<button class="btn2" onclick="alert('Share + QR ready')">🔗 Share + QR</button>
+<p style="margin-top:12px"><b>This is WORKING version — main app file coming next will have all features.</b> Tap Logout to test login again.</p>
+<button class="btn2" onclick="localStorage.removeItem('currentUser');location.reload()">Logout</button>
+</div>
+</div>
+</div>
+<script>
+function forceEnter(){
+ try{
+  const fn=document.getElementById('fName').value||'Justin';
+  const em=document.getElementById('email').value||'guest@lwc';
+  const dob=document.getElementById('dob').value||'1988-07-29';
+  localStorage.setItem('currentUser', JSON.stringify({firstName:fn,email:em,dob:dob}));
+  document.getElementById('title').innerText='Welcome, '+fn+'!';
+  document.getElementById('msg').innerText='Logged in! Scroll down';
+  document.getElementById('home').style.display='block';
+  document.getElementById('welcome').innerText='Welcome, '+fn+'!';
+  const now=new Date(); const d=new Date(dob);
+  if(now.getMonth()===d.getMonth()&&now.getDate()===d.getDate()){
+    document.getElementById('bday').innerHTML="<div style='background:#fff3a6;border:2px solid #ffb300;padding:10px;border-radius:12px;text-align:center;font-weight:800'>🎉 Happy Birthday, "+fn+"! 🎂</div>";
+  }
+  // save flag that we entered
+  localStorage.setItem('entered','1');
+ }catch(e){
+  alert('Storage error: '+e.message+' — tap Clear & Reload top');
+ }
+}
+function guestEnter(){
+ try{
+  localStorage.setItem('currentUser', JSON.stringify({firstName:'Friend',email:'guest@lwc',dob:'2000-01-01'}));
+  forceEnter();
+ }catch(e){alert(e.message);}
+}
+// auto enter if already logged
+try{
+ const u=JSON.parse(localStorage.getItem('currentUser')||'null');
+ if(u&&u.firstName){
+   document.getElementById('fName').value=u.firstName;
+   document.getElementById('email').value=u.email||'';
+   document.getElementById('dob').value=u.dob||'1988-07-29';
+   // auto show home
+   setTimeout(forceEnter, 300);
+ }
+}catch(e){}
+</script>
+</body>
+</html>
